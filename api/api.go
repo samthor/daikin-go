@@ -1,3 +1,4 @@
+// Package api discovers and talks to Daikin devices which have a wireless interface.
 package api
 
 import (
