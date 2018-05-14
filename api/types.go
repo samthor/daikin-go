@@ -86,7 +86,7 @@ func (ci *ControlInfo) Values() url.Values {
 	if temp < 0.0 {
 		v.Set("stemp", "M") // TODO: still not sure what this does
 	} else {
-		v.Set("stemp", strconv.FormatFloat(ci.Temp, 'f', 1, 64))
+		v.Set("stemp", strconv.FormatFloat(temp, 'f', 1, 64))
 	}
 
 	// shum: 0-50 or "AUTO"
