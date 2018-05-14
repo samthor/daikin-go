@@ -41,7 +41,7 @@ func (ci *ControlInfo) Equal(other *ControlInfo) bool {
 	}
 
 	return ci.Mode == other.Mode &&
-		ci.Temp == other.Temp &&
+		ci.clampTemp() == other.clampTemp() &&
 		ci.Humidity == other.Humidity &&
 		ci.FanRate == other.FanRate &&
 		ci.FanDir == other.FanDir
