@@ -21,6 +21,44 @@ const (
 	FanDirBoth
 )
 
+// ParseControlInfo parses a ControlInfo from a url.Values.
+func ParseControlInfo(v url.Values) *ControlInfo {
+	out := &ControlInfo{
+		Power:  v.Get("pow") == "1",
+		FanDir: -1,
+	}
+
+	out.Mode = "auto"
+	mode, _ := strconv.Atoi(v.Get("mode"))
+	switch mode {
+	case 2:
+		out.Mode = "dehum"
+	case 3:
+		out.Mode = "cool"
+	case 4:
+		out.Mode = "heat"
+	case 6:
+		out.Mode = "fan"
+	}
+
+	out.Temp, _ = strconv.ParseFloat(v.Get("stemp"), 64)
+	out.Humidity, _ = strconv.Atoi(v.Get("shum"))
+
+	if frate, err := strconv.Atoi(v.Get("f_rate")); err == nil {
+		if frate >= 3 && frate <= 7 {
+			out.FanRate = frate - 2
+		}
+	} else if v.Get("f_rate") == "B" {
+		out.FanRate = FanRateQuiet
+	}
+
+	if fdir, err := strconv.Atoi(v.Get("f_dir")); err == nil {
+		out.FanDir = FanDir(fdir)
+	}
+
+	return out
+}
+
 // ControlInfo specifies how to interact with a Daikin AC.
 type ControlInfo struct {
 	Power    bool
@@ -28,7 +66,7 @@ type ControlInfo struct {
 	Temp     float64 // TODO: or "M"
 	Humidity int     // -ve for "AUTO"
 	FanRate  int
-	FanDir   FanDir
+	FanDir   FanDir // -ve for unset
 }
 
 // Equal determines whether this ControlInfo is equal to another ControlInfo.
@@ -117,7 +155,7 @@ func (ci *ControlInfo) Values() url.Values {
 		if rate > 5 {
 			rate = 5
 		}
-		v.Set("f_rate", fmt.Sprintf("%d", rate + 2)) // rates are 3-7
+		v.Set("f_rate", fmt.Sprintf("%d", rate+2)) // rates are 3-7
 	}
 
 	// f_dir (optional): 0-3
