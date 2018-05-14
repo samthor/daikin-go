@@ -6,9 +6,17 @@ import (
 	"strconv"
 )
 
+// FanRate indicates the rate of the fan.
+type FanRate int
+
 const (
-	FanRateAuto  = 0
-	FanRateQuiet = -1
+	FanRateQuiet FanRate = -1
+	FanRateAuto  FanRate = iota
+	FanRateOne
+	FanRateTwo
+	FanRateThree
+	FanRateFour
+	FanRateFive
 )
 
 // FanDir indicates what direction the fan should run.
@@ -46,7 +54,7 @@ func ParseControlInfo(v url.Values) *ControlInfo {
 
 	if frate, err := strconv.Atoi(v.Get("f_rate")); err == nil {
 		if frate >= 3 && frate <= 7 {
-			out.FanRate = frate - 2
+			out.FanRate = FanRate(frate - 2) // daikin uses 3-7 for rates 1-5
 		}
 	} else if v.Get("f_rate") == "B" {
 		out.FanRate = FanRateQuiet
@@ -62,10 +70,10 @@ func ParseControlInfo(v url.Values) *ControlInfo {
 // ControlInfo specifies how to interact with a Daikin AC.
 type ControlInfo struct {
 	Power    bool
-	Mode     string  // one of "auto", "dehum", "cool", "heat", or "fan"- must be non-empty
-	Temp     float64 // TODO: or "M"
-	Humidity int     // -ve for "AUTO"
-	FanRate  int
+	Mode     string  // one of "auto", "dehum", "cool", "heat", or "fan"
+	Temp     float64 // -ve for "M"
+	Humidity int     // 0-50, -ve for "AUTO"
+	FanRate  FanRate // zero is "auto"
 	FanDir   FanDir // -ve for unset
 }
 
