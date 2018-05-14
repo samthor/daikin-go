@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-  values, err := api.Get("192.168.1.155", "aircon/get_sensor_info")
+  values, err := daikin.Get("192.168.1.155", "aircon/get_sensor_info")
   if err != nil {
     log.Fatal(err)
   }
