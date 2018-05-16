@@ -15,20 +15,23 @@ const (
 type FanRate int
 
 const (
-	FanRateQuiet FanRate = -2
-	FanRateAuto  FanRate = iota
+	FanRateUnset FanRate = iota
 	FanRateOne
 	FanRateTwo
 	FanRateThree
 	FanRateFour
 	FanRateFive
+
+	FanRateQuiet FanRate = -2
+	FanRateAuto  FanRate = -1
 )
 
 // FanDir indicates what direction the fan should run.
 type FanDir int
 
 const (
-	FanDirNone FanDir = iota
+	FanDirUnset FanDir = iota
+	FanDirNone
 	FanDirVertical
 	FanDirHorizontal
 	FanDirBoth
@@ -37,9 +40,7 @@ const (
 // ParseControlInfo parses a ControlInfo from a url.Values.
 func ParseControlInfo(v url.Values) *ControlInfo {
 	out := &ControlInfo{
-		Power:   v.Get("pow") == "1",
-		FanDir:  -1,
-		FanRate: -1,
+		Power: v.Get("pow") == "1",
 	}
 
 	out.Mode = "auto"
@@ -62,12 +63,14 @@ func ParseControlInfo(v url.Values) *ControlInfo {
 		if frate >= 3 && frate <= 7 {
 			out.FanRate = FanRate(frate - 2) // daikin uses 3-7 for rates 1-5
 		}
+	} else if v.Get("f_rate") == "A" {
+		out.FanRate = FanRateAuto
 	} else if v.Get("f_rate") == "B" {
 		out.FanRate = FanRateQuiet
 	}
 
 	if fdir, err := strconv.Atoi(v.Get("f_dir")); err == nil {
-		out.FanDir = FanDir(fdir)
+		out.FanDir = FanDir(fdir) + 1 // our values are 1-4, device 0-3
 	}
 
 	return out
@@ -79,8 +82,8 @@ type ControlInfo struct {
 	Mode     string  // one of "auto", "dehum", "cool", "heat", or "fan"
 	Temp     float64 // -ve for "M"
 	Humidity int     // 0-50, -ve for "AUTO"
-	FanRate  FanRate // zero is "auto", -1 is unset
-	FanDir   FanDir  // -ve for unset
+	FanRate  FanRate
+	FanDir   FanDir
 }
 
 // Equal determines whether this ControlInfo is equal to another ControlInfo.
@@ -173,8 +176,8 @@ func (ci *ControlInfo) Values() url.Values {
 	}
 
 	// f_dir (optional): 0-3
-	if ci.FanDir >= 0 && ci.FanDir <= 3 {
-		v.Set("f_dir", fmt.Sprintf("%d", ci.FanDir))
+	if ci.FanDir >= 1 && ci.FanDir <= 4 {
+		v.Set("f_dir", fmt.Sprintf("%d", ci.FanDir-1))
 	}
 
 	return v
