@@ -55,3 +55,10 @@ func TestControlInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestQuiet(t *testing.T) {
+	v := (&ControlInfo{Power: true, FanRate: FanRateQuiet}).Values()
+	if v.Get("f_rate") != "B" {
+		t.Errorf("expected quiet to be \"B\", was: %v", v.Get("f_rate"))
+	}
+}
