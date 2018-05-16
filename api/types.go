@@ -6,11 +6,16 @@ import (
 	"strconv"
 )
 
+const (
+	tempMin = 10.0
+	tempMax = 41.0
+)
+
 // FanRate indicates the rate of the fan.
 type FanRate int
 
 const (
-	FanRateQuiet FanRate = -1
+	FanRateQuiet FanRate = -2
 	FanRateAuto  FanRate = iota
 	FanRateOne
 	FanRateTwo
@@ -32,8 +37,9 @@ const (
 // ParseControlInfo parses a ControlInfo from a url.Values.
 func ParseControlInfo(v url.Values) *ControlInfo {
 	out := &ControlInfo{
-		Power:  v.Get("pow") == "1",
-		FanDir: -1,
+		Power:   v.Get("pow") == "1",
+		FanDir:  -1,
+		FanRate: -1,
 	}
 
 	out.Mode = "auto"
@@ -73,8 +79,8 @@ type ControlInfo struct {
 	Mode     string  // one of "auto", "dehum", "cool", "heat", or "fan"
 	Temp     float64 // -ve for "M"
 	Humidity int     // 0-50, -ve for "AUTO"
-	FanRate  FanRate // zero is "auto"
-	FanDir   FanDir // -ve for unset
+	FanRate  FanRate // zero is "auto", -1 is unset
+	FanDir   FanDir  // -ve for unset
 }
 
 // Equal determines whether this ControlInfo is equal to another ControlInfo.
@@ -99,10 +105,10 @@ func (ci *ControlInfo) clampTemp() float64 {
 		return -1.0 // "M" mode
 	} else if t == 0.0 {
 		return 0.0 // default/nothing
-	} else if t <= 10.0 {
-		return 10.0
-	} else if t >= 41.0 {
-		return 41.0
+	} else if t <= tempMin {
+		return tempMin
+	} else if t >= tempMax {
+		return tempMax
 	}
 	// clamp to 0.5
 	value := int(t * 2)
