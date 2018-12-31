@@ -38,10 +38,8 @@ const (
 )
 
 // ParseControlInfo parses a ControlInfo from a url.Values.
-func ParseControlInfo(v url.Values) *ControlInfo {
-	out := &ControlInfo{
-		Power: v.Get("pow") == "1",
-	}
+func ParseControlInfo(v url.Values) (out ControlInfo) {
+	out.Power = v.Get("pow") == "1"
 
 	out.Mode = "auto"
 	mode, _ := strconv.Atoi(v.Get("mode"))
@@ -73,7 +71,22 @@ func ParseControlInfo(v url.Values) *ControlInfo {
 		out.FanDir = FanDir(fdir) + 1 // our values are 1-4, device 0-3
 	}
 
-	return out
+	return
+}
+
+// SensorInfo contains sensor information from a Daikin AC.
+type SensorInfo struct {
+	Temp  float64  // inside
+	World *float64 // outside
+}
+
+// ParseSensorInfo parses a SensorInfo from a url.Values.
+func ParseSensorInfo(v url.Values) (out SensorInfo) {
+	out.Temp, _ = strconv.ParseFloat(v.Get("htemp"), 64)
+	if otemp, err := strconv.ParseFloat(v.Get("otemp"), 64); err == nil {
+		out.World = &otemp
+	}
+	return
 }
 
 // ControlInfo specifies how to interact with a Daikin AC.

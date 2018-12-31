@@ -20,8 +20,8 @@ func TestConst(t *testing.T) {
 }
 
 func TestControlInfo(t *testing.T) {
-	src := []*ControlInfo{
-		&ControlInfo{
+	src := []ControlInfo{
+		ControlInfo{
 			Power:    true,
 			Mode:     "heat",
 			Temp:     22.5, // floating-point would be clamped
@@ -29,18 +29,18 @@ func TestControlInfo(t *testing.T) {
 			FanRate:  FanRateAuto,
 			FanDir:   FanDirNone,
 		},
-		&ControlInfo{
+		ControlInfo{
 			Power:   true,
 			Mode:    "auto",
 			Temp:    20.0,
 			FanRate: FanRateQuiet,
 		},
-		&ControlInfo{
+		ControlInfo{
 			Power: true,
 			Mode:  "cool",
 			Temp:  18.0,
 		},
-		&ControlInfo{
+		ControlInfo{
 			Power: false,
 			Mode:  "auto",
 			Temp:  18.0,
@@ -50,14 +50,15 @@ func TestControlInfo(t *testing.T) {
 	for _, ci := range src {
 		v := ci.Values()
 		parsed := ParseControlInfo(v)
-		if !parsed.Equal(ci) {
+		if !parsed.Equal(&ci) {
 			t.Errorf("expected equal, parsed=%+v source=%+v values=%+v", parsed, ci, v)
 		}
 	}
 }
 
 func TestQuiet(t *testing.T) {
-	v := (&ControlInfo{Power: true, FanRate: FanRateQuiet}).Values()
+	ci := ControlInfo{Power: true, FanRate: FanRateQuiet}
+	v := ci.Values()
 	if v.Get("f_rate") != "B" {
 		t.Errorf("expected quiet to be \"B\", was: %v", v.Get("f_rate"))
 	}

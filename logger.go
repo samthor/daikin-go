@@ -66,7 +66,6 @@ func main() {
 	go func() {
 		// probe lots to start with
 		for i := 0; i < 5; i++ {
-			tickCh <- true
 			time.Sleep(time.Second)
 		}
 		for {
