@@ -33,6 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("couldn't construct discover: %v", err)
 	}
+	log.Printf("got discover, waiting...")
 
 	type initialPayload struct {
 		basicInfo
