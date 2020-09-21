@@ -24,26 +24,34 @@ func TestControlInfo(t *testing.T) {
 		ControlInfo{
 			Power:    true,
 			Mode:     "heat",
-			Temp:     22.5, // floating-point would be clamped
-			Humidity: 10,
-			FanRate:  FanRateAuto,
-			FanDir:   FanDirNone,
+			ControlInfoMode: ControlInfoMode{
+				Temp:     22.5, // floating-point would be clamped
+				Humidity: 10,
+				FanRate:  FanRateAuto,
+				FanDir:   FanDirNone,
+			},
 		},
 		ControlInfo{
 			Power:   true,
 			Mode:    "auto",
-			Temp:    20.0,
-			FanRate: FanRateQuiet,
+			ControlInfoMode: ControlInfoMode{
+				Temp:    20.0,
+				FanRate: FanRateQuiet,
+			},
 		},
 		ControlInfo{
 			Power: true,
 			Mode:  "cool",
-			Temp:  18.0,
+			ControlInfoMode: ControlInfoMode{
+				Temp:  18.0,
+			},
 		},
 		ControlInfo{
 			Power: false,
 			Mode:  "auto",
-			Temp:  18.0,
+			ControlInfoMode: ControlInfoMode{
+				Temp:  18.0,
+			},
 		},
 	}
 
@@ -57,7 +65,7 @@ func TestControlInfo(t *testing.T) {
 }
 
 func TestQuiet(t *testing.T) {
-	ci := ControlInfo{Power: true, FanRate: FanRateQuiet}
+	ci := ControlInfo{Power: true, ControlInfoMode: ControlInfoMode{FanRate: FanRateQuiet}}
 	v := ci.Values()
 	if v.Get("f_rate") != "B" {
 		t.Errorf("expected quiet to be \"B\", was: %v", v.Get("f_rate"))

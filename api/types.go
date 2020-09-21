@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	tempMin = 10.0
-	tempMax = 41.0
+	tempMin = 19.0 // 10.0
+	tempMax = 25.0 // 41.0
 )
 
 // FanRate indicates the rate of the fan.
@@ -55,23 +55,61 @@ func ParseControlInfo(v url.Values) (out ControlInfo) {
 	}
 
 	out.Temp, _ = strconv.ParseFloat(v.Get("stemp"), 64)
-	out.Humidity, _ = strconv.Atoi(v.Get("shum"))
+	out.Humidity = parseHumidity(v.Get("shum"))
+	out.FanRate = parseFanRate(v.Get("f_rate"))
+	out.FanDir = parseFanDir(v.Get("f_dir"))
 
-	if frate, err := strconv.Atoi(v.Get("f_rate")); err == nil {
-		if frate >= 3 && frate <= 7 {
-			out.FanRate = FanRate(frate - 2) // daikin uses 3-7 for rates 1-5
+	out.OtherModes = map[string]ControlInfoMode{}
+
+	updateMode := func(index int, name string) {
+		var info ControlInfoMode
+		get := func(name string) string {
+			return v.Get(fmt.Sprintf("%s%d", name, index))
 		}
-	} else if v.Get("f_rate") == "A" {
-		out.FanRate = FanRateAuto
-	} else if v.Get("f_rate") == "B" {
-		out.FanRate = FanRateQuiet
+
+		info.Temp, _ = strconv.ParseFloat(get("dt"), 64)
+		info.Humidity = parseHumidity(get("dh"))
+		info.FanRate = parseFanRate(get("dfr"))
+		info.FanDir = parseFanDir(get("dfd"))
+
+		out.OtherModes[name] = info
 	}
 
-	if fdir, err := strconv.Atoi(v.Get("f_dir")); err == nil {
-		out.FanDir = FanDir(fdir) + 1 // our values are 1-4, device 0-3
-	}
+	updateMode(1, "auto")
+	updateMode(2, "dehum")
+	updateMode(3, "cool")
+	updateMode(4, "heat")
+	updateMode(6, "fan")
 
 	return
+}
+
+func parseHumidity(raw string) int {
+	out, err := strconv.Atoi(raw)
+	if err != nil || out < 0 || out > 100 {
+		return -1
+	}
+	return out
+}
+
+func parseFanRate(raw string) FanRate {
+	if frate, err := strconv.Atoi(raw); err == nil {
+		if frate >= 3 && frate <= 7 {
+			return FanRate(frate - 2) // daikin uses 3-7 for rates 1-5
+		}
+	} else if raw == "A" {
+		return FanRateAuto
+	} else if raw == "B" {
+		return FanRateQuiet
+	}
+	return FanRateUnset
+}
+
+func parseFanDir(raw string) FanDir {
+	if fdir, err := strconv.Atoi(raw); err == nil {
+		return FanDir(fdir) + 1 // our values are 1-4, device 0-3
+	}
+	return FanDirUnset
 }
 
 // SensorInfo contains sensor information from a Daikin AC.
@@ -91,8 +129,16 @@ func ParseSensorInfo(v url.Values) (out SensorInfo) {
 
 // ControlInfo specifies how to interact with a Daikin AC.
 type ControlInfo struct {
-	Power    bool
-	Mode     string  // one of "auto", "dehum", "cool", "heat", or "fan"
+	Power bool
+	Mode  string // one of "auto", "dehum", "cool", "heat", or "fan"
+
+	ControlInfoMode // embedded/target
+
+	OtherModes map[string]ControlInfoMode // info from get
+}
+
+// ControlInfoMode is returned from the AC and represents the state of other modes.
+type ControlInfoMode struct {
 	Temp     float64 // -ve for "M"
 	Humidity int     // 0-50, -ve for "AUTO"
 	FanRate  FanRate
